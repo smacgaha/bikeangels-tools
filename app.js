@@ -12,7 +12,7 @@ const BODYPARSER_CONFIGS = {
 };
 const PORT = process.env.PORT || 3000
 
-let currentMax = {lastUpdated: 'never', highestPointStation: 'unknown'}
+let currentStationInfo = {lastUpdated: 'never', stations: false}
 
 app.use(logger());
 app.use(bodyParser(BODYPARSER_CONFIGS));
@@ -22,7 +22,7 @@ router.get('/', (ctx, next) => {
 });
 
 router.get('/current_max_points', (ctx, next) => {
-  ctx.body = currentMax;
+  ctx.body = getMaxPoints();
 });
 
 router.post('/add_new_data', (ctx, next) => {
@@ -30,9 +30,8 @@ router.post('/add_new_data', (ctx, next) => {
     return feature.properties.bike_angels_points;
   });
 
-  const stationInfoToStore = validStations.map((feature) => {
+  currentStationInfo.stations = validStations.map((feature) => {
     const action = feature.properties.bike_angels_action;
-    const points = feature.properties.bike_angels_points;
     const availableBikes = feature.properties.bikes_available;
     const availableDocks = feature.properties.docks_available;
 
@@ -48,26 +47,28 @@ router.post('/add_new_data', (ctx, next) => {
       name: feature.properties.name,
       action: action,
       maxPossibleActions: maxPossibleActions,
-      points: points,
-      maxPoints: maxPossibleActions * points,
+      points: feature.properties.bike_angels_points,
     };
   });
+  currentStationInfo.lastUpdated = new Date().toISOString();
+  ctx.response.body = getMaxPoints()
+});
 
+function getMaxPoints() {
   maxPointStation = {maxPoints: 0}
-  stationInfoToStore.forEach((station) => {
-    if (station.maxPoints > maxPointStation.maxPoints) {
+  currentStationInfo.stations.forEach((station) => {
+    stationPoints = station.maxPossibleActions * station.points;
+
+    if (stationPoints > maxPointStation.maxPoints) {
       maxPointStation = station;
+      maxPointStation.maxPoints = stationPoints;
     }
   });
-
-  currentMax = {
-    lastUpdated: new Date().toISOString(),
-    highestPointStation: maxPointStation,
-  }
-
-  ctx.response.body = maxPointStation;
-});
+  maxPointStation.lastUpdated = currentStationInfo.lastUpdated
+  return maxPointStation;
+}
 
 app.use(router.routes());
 app.use(router.allowedMethods());
+
 app.listen(PORT);
