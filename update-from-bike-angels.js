@@ -11,11 +11,15 @@ async function updateFromBikeAngels() {
   console.log(appRes.body)
 }
 
-(
-  updateFromBikeAngels()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.log(error)
-      process.exit(1)
-    })
-)
+if (require.main == module) {
+  (
+    updateFromBikeAngels()
+      .then(() => process.exit(0))
+      .catch((error) => {
+        console.log(error)
+        process.exit(1)
+      })
+  )
+}
+
+module.exports = updateFromBikeAngels;

@@ -2,6 +2,7 @@ const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const Router = require('koa-router');
+const updateFromBikeAngels = require('./update-from-bike-angels');
 
 const app = new Koa();
 const router = new Router();
@@ -21,11 +22,11 @@ router.get('/', (ctx, next) => {
   ctx.body = 'Hello World!';
 });
 
-router.get('/current_max_points', (ctx, next) => {
-  ctx.body = getMaxPoints(ctx.request.query.actualMaxActions);
+router.get('/current_max_points', async (ctx, next) => {
+  ctx.body = await getMaxPoints(ctx.request.query.actualMaxActions);
 });
 
-router.post('/add_new_data', (ctx, next) => {
+router.post('/add_new_data', async (ctx, next) => {
   const validStations = ctx.request.body.features.filter((feature) => {
     return feature.properties.bike_angels_points;
   });
@@ -51,16 +52,15 @@ router.post('/add_new_data', (ctx, next) => {
     };
   });
   currentStationInfo.lastUpdated = new Date().toISOString();
-  ctx.response.body = getMaxPoints()
+  ctx.response.body = await getMaxPoints()
 });
 
-function getMaxPoints(actualMaxActions = false) {
+async function getMaxPoints(actualMaxActions = false) {
   if (!currentStationInfo.stations) {
-    return 'no current data!'
+    await updateFromBikeAngels()
   }
   maxPointStation = {maxPoints: 0}
 
-  console.log(currentStationInfo)
   currentStationInfo.stations.forEach((station) => {
     let maxActions;
     if (actualMaxActions) {
