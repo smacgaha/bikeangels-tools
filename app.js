@@ -22,7 +22,7 @@ router.get('/', (ctx, next) => {
 });
 
 router.get('/current_max_points', (ctx, next) => {
-  ctx.body = getMaxPoints();
+  ctx.body = getMaxPoints(ctx.request.query.actualMaxActions);
 });
 
 router.post('/add_new_data', (ctx, next) => {
@@ -54,10 +54,19 @@ router.post('/add_new_data', (ctx, next) => {
   ctx.response.body = getMaxPoints()
 });
 
-function getMaxPoints() {
+function getMaxPoints(actualMaxActions = false) {
   maxPointStation = {maxPoints: 0}
+
+  console.log(currentStationInfo)
   currentStationInfo.stations.forEach((station) => {
-    stationPoints = station.maxPossibleActions * station.points;
+    let maxActions;
+    if (actualMaxActions) {
+      maxActions = (station.maxPossibleActions < actualMaxActions) ? station.maxPossibleActions : actualMaxActions;
+    } else {
+      maxActions = station.maxPossibleActions;
+    }
+
+    stationPoints = maxActions * station.points;
 
     if (stationPoints > maxPointStation.maxPoints) {
       maxPointStation = station;
