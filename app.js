@@ -10,6 +10,7 @@ const BODYPARSER_CONFIGS = {
   // payloads from bike-angels are huge
   jsonLimit: '20mb',
 };
+const PORT = process.env.PORT || 3000
 
 let currentMax = {}
 
@@ -66,4 +67,4 @@ router.post('/add_new_data', (ctx, next) => {
 
 app.use(router.routes());
 app.use(router.allowedMethods());
-app.listen(3000);
+app.listen(PORT);
