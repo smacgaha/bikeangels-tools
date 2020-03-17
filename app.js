@@ -11,11 +11,17 @@ const BODYPARSER_CONFIGS = {
   jsonLimit: '20mb',
 };
 
+let currentMax = {}
+
 app.use(logger());
 app.use(bodyParser(BODYPARSER_CONFIGS));
 
 router.get('/', (ctx, next) => {
   ctx.body = 'Hello World!';
+});
+
+router.get('/current_max_points', (ctx, next) => {
+  ctx.body = currentMax;
 });
 
 router.post('/add_new_data', (ctx, next) => {
@@ -53,7 +59,9 @@ router.post('/add_new_data', (ctx, next) => {
     }
   });
 
-  ctx.response.body = maxPointStation
+  currentMax = maxPointStation;
+
+  ctx.response.body = maxPointStation;
 });
 
 app.use(router.routes());
