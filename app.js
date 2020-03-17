@@ -55,6 +55,9 @@ router.post('/add_new_data', (ctx, next) => {
 });
 
 function getMaxPoints(actualMaxActions = false) {
+  if (!currentStationInfo.stations) {
+    return 'no current data!'
+  }
   maxPointStation = {maxPoints: 0}
 
   console.log(currentStationInfo)
