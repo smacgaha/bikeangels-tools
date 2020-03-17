@@ -19,29 +19,41 @@ router.get('/', (ctx, next) => {
 });
 
 router.post('/add_new_data', (ctx, next) => {
-  const valid_stations = ctx.request.body.features.filter((feature) => {
+  const validStations = ctx.request.body.features.filter((feature) => {
     return feature.properties.bike_angels_points;
   });
 
-  const stationInfoToStore = valid_stations.map((feature) => {
+  const stationInfoToStore = validStations.map((feature) => {
+    const action = feature.properties.bike_angels_action;
+    const points = feature.properties.bike_angels_points;
+    const availableBikes = feature.properties.bikes_available;
+    const availableDocks = feature.properties.docks_available;
+
+    let maxPossibleActions;
+    if (action == 'give') {
+      maxPossibleActions = availableDocks - availableBikes;
+    } else {
+      maxPossibleActions = availableBikes;
+    }
+
     return {
-      station_id: feature.properties.station_id,
+      stationId: feature.properties.station_id,
       name: feature.properties.name,
-      action: feature.properties.bike_angels_action,
-      points: feature.properties.bike_angels_points,
+      action: action,
+      maxPossibleActions: maxPossibleActions,
+      points: points,
+      maxPoints: maxPossibleActions * points,
     };
   });
 
-  max_point_station = {points: 0}
+  maxPointStation = {maxPoints: 0}
   stationInfoToStore.forEach((station) => {
-    if (station.points > max_point_station.points) {
-      max_point_station = station;
+    if (station.maxPoints > maxPointStation.maxPoints) {
+      maxPointStation = station;
     }
   });
 
-  console.log(max_point_station)
-
-  ctx.body = 'Hello World!';
+  ctx.response.body = maxPointStation
 });
 
 app.use(router.routes());
