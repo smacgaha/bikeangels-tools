@@ -12,7 +12,7 @@ const BODYPARSER_CONFIGS = {
 };
 const PORT = process.env.PORT || 3000
 
-let currentMax = {}
+let currentMax = {lastUpdated: 'never', highestPointStation: 'unknown'}
 
 app.use(logger());
 app.use(bodyParser(BODYPARSER_CONFIGS));
@@ -60,7 +60,10 @@ router.post('/add_new_data', (ctx, next) => {
     }
   });
 
-  currentMax = maxPointStation;
+  currentMax = {
+    lastUpdated: new Date().toISOString(),
+    highestPointStation: maxPointStation,
+  }
 
   ctx.response.body = maxPointStation;
 });
