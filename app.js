@@ -14,12 +14,22 @@ const BODYPARSER_CONFIGS = {
 const PORT = process.env.PORT || 3000;
 
 let currentStationInfo = {lastUpdated: 'never', stations: false};
+let numberOfUpdates = 0;
+let history = {};
 
 app.use(logger());
 app.use(bodyParser(BODYPARSER_CONFIGS));
 
 router.get('/', (ctx) => {
   ctx.body = 'Hello World!';
+});
+
+router.get('/history', (ctx) => {
+  ctx.body = {
+    description: 'number of times each station has gone above 50 points with a maxAction of 5',
+    history,
+    numberOfUpdates,
+  };
 });
 
 router.get('/current_max_points', async (ctx) => {
@@ -53,25 +63,26 @@ router.post('/add_new_data', async (ctx) => {
     };
   });
   currentStationInfo.lastUpdated = new Date().toISOString();
-  ctx.response.body = await getMaxPoints();
+
+  const pointedStations = await getPointedStations(5);
+  pointedStations.forEach((pointedStation) => {
+    if (pointedStation.maxPoints < 50) {
+      return;
+    }
+
+    if (!history[pointedStation.name]) {
+      history[pointedStation.name] = 0;
+    }
+
+    history[pointedStation.name] += 1;
+  });
+  numberOfUpdates += 1;
+
+  ctx.response.body = {code: 200};
 });
 
 async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
-  if (!currentStationInfo.stations) {
-    await updateFromBikeAngels();
-  }
-
-  const pointedStations = currentStationInfo.stations.map((station) => {
-    let maxActions;
-    if (actualMaxActions) {
-      maxActions = (station.maxPossibleActions < actualMaxActions) ? station.maxPossibleActions : actualMaxActions;
-    } else {
-      maxActions = station.maxPossibleActions;
-    }
-
-    station.maxPoints = maxActions * station.points;
-    return station;
-  });
+  const pointedStations = await getPointedStations(actualMaxActions);
 
   pointedStations.sort((a, b) => {
     return b.maxPoints - a.maxPoints;
@@ -84,6 +95,25 @@ async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
   };
 
   return result;
+}
+
+async function getPointedStations(actualMaxActions) {
+  if (!currentStationInfo.stations) {
+    await updateFromBikeAngels();
+  }
+
+  return currentStationInfo.stations.map((station) => {
+    let maxActions;
+    if (actualMaxActions) {
+      maxActions = (station.maxPossibleActions < actualMaxActions) ? station.maxPossibleActions : actualMaxActions;
+    } else {
+      maxActions = station.maxPossibleActions;
+    }
+
+    station.maxPoints = maxActions * station.points;
+    return station;
+  });
+
 }
 
 app.use(router.routes());
