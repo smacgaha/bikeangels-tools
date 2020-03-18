@@ -11,23 +11,23 @@ const BODYPARSER_CONFIGS = {
   // payloads from bike-angels are huge
   jsonLimit: '20mb',
 };
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
-let currentStationInfo = {lastUpdated: 'never', stations: false}
+let currentStationInfo = {lastUpdated: 'never', stations: false};
 
 app.use(logger());
 app.use(bodyParser(BODYPARSER_CONFIGS));
 
-router.get('/', (ctx, next) => {
+router.get('/', (ctx) => {
   ctx.body = 'Hello World!';
 });
 
-router.get('/current_max_points', async (ctx, next) => {
+router.get('/current_max_points', async (ctx) => {
   ctx.body = await getMaxPoints(
     ctx.request.query.actualMaxActions, ctx.request.query.numberOfStations);
 });
 
-router.post('/add_new_data', async (ctx, next) => {
+router.post('/add_new_data', async (ctx) => {
   const validStations = ctx.request.body.features.filter((feature) => {
     return feature.properties.bike_angels_points;
   });
@@ -53,12 +53,12 @@ router.post('/add_new_data', async (ctx, next) => {
     };
   });
   currentStationInfo.lastUpdated = new Date().toISOString();
-  ctx.response.body = await getMaxPoints()
+  ctx.response.body = await getMaxPoints();
 });
 
 async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
   if (!currentStationInfo.stations) {
-    await updateFromBikeAngels()
+    await updateFromBikeAngels();
   }
 
   const pointedStations = currentStationInfo.stations.map((station) => {
@@ -70,7 +70,7 @@ async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
     }
 
     station.maxPoints = maxActions * station.points;
-    return station
+    return station;
   });
 
   pointedStations.sort((a, b) => {
@@ -81,7 +81,7 @@ async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
     stations: pointedStations.slice(0, numberOfStations),
     actualMaxActions: actualMaxActions,
     lastUpdated: currentStationInfo.lastUpdated,
-  }
+  };
 
   return result;
 }
