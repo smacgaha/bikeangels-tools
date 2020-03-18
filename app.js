@@ -23,7 +23,8 @@ router.get('/', (ctx, next) => {
 });
 
 router.get('/current_max_points', async (ctx, next) => {
-  ctx.body = await getMaxPoints(ctx.request.query.actualMaxActions);
+  ctx.body = await getMaxPoints(
+    ctx.request.query.actualMaxActions, ctx.request.query.numberOfStations);
 });
 
 router.post('/add_new_data', async (ctx, next) => {
@@ -55,13 +56,12 @@ router.post('/add_new_data', async (ctx, next) => {
   ctx.response.body = await getMaxPoints()
 });
 
-async function getMaxPoints(actualMaxActions = false) {
+async function getMaxPoints(actualMaxActions = false, numberOfStations = 1) {
   if (!currentStationInfo.stations) {
     await updateFromBikeAngels()
   }
-  maxPointStation = {maxPoints: 0}
 
-  currentStationInfo.stations.forEach((station) => {
+  const pointedStations = currentStationInfo.stations.map((station) => {
     let maxActions;
     if (actualMaxActions) {
       maxActions = (station.maxPossibleActions < actualMaxActions) ? station.maxPossibleActions : actualMaxActions;
@@ -69,15 +69,21 @@ async function getMaxPoints(actualMaxActions = false) {
       maxActions = station.maxPossibleActions;
     }
 
-    stationPoints = maxActions * station.points;
-
-    if (stationPoints > maxPointStation.maxPoints) {
-      maxPointStation = station;
-      maxPointStation.maxPoints = stationPoints;
-    }
+    station.maxPoints = maxActions * station.points;
+    return station
   });
-  maxPointStation.lastUpdated = currentStationInfo.lastUpdated
-  return maxPointStation;
+
+  pointedStations.sort((a, b) => {
+    return b.maxPoints - a.maxPoints;
+  });
+
+  const result = {
+    stations: pointedStations.slice(0, numberOfStations),
+    actualMaxActions: actualMaxActions,
+    lastUpdated: currentStationInfo.lastUpdated,
+  }
+
+  return result;
 }
 
 app.use(router.routes());
